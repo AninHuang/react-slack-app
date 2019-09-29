@@ -3,6 +3,9 @@ import firebase from '../../firebase';
 import 'firebase/auth';
 import 'firebase/database';
 import 'firebase/storage';
+// MD5 Message-Digest Algorithm 訊息摘要演算法，
+// 密碼雜湊函式，可以產生出一個 128 位元的雜湊值，用於確保資訊傳輸完整一致。
+import md5 from 'md5';
 import { Grid, Form, Segment, Button, Header, Message, Icon } from 'semantic-ui-react';
 import { Link } from 'react-router-dom';
 
@@ -11,7 +14,49 @@ class Register extends React.Component {
     username: "",
     email: "",
     password: "",
-    passwordConfirmation: ""
+    passwordConfirmation: "",
+    errors: [],
+    loading: false
+  }
+
+  isFormValid = () => {
+    let errors = [];
+    let error;
+
+    if (this.isFormEmpty(this.state)) {
+      error = { message: 'Fill in all fields' };
+      this.setState({ errors: errors.concat(error) });
+      return false;
+
+    } else if (!this.isPasswordValid(this.state)) {
+      error = { message: 'Password is invalid' };
+      this.setState({ errors: errors.concat(error) });
+      return false;
+
+    } else {
+      return true;
+    }
+  }
+
+  isFormEmpty = ({username, email, password, passwordConfirmation}) => {
+    return !username.length || !email.length || !password.length || 
+    !passwordConfirmation.length;
+  }
+
+  isPasswordValid = ({ password, passwordConfirmation }) => {
+    if (password.length < 6 || passwordConfirmation.length < 6) {
+      return false;
+    } else if (password !== passwordConfirmation) {
+      return false;
+    } else {
+      return true;
+    }
+  }
+
+  displayErrors = errors => errors.map((error, i) => <p key={i}>{error.message}</p>);
+
+  handleInputError = (errors, inputName) => {
+    return errors.some(err => err.message.toLowerCase().includes(inputName)) ? 'error' : ''
   }
 
   handleChange = event => {
@@ -20,19 +65,33 @@ class Register extends React.Component {
 
   handleSubmit = event => {
     event.preventDefault();
-    firebase
-      .auth()
-      .createUserWithEmailAndPassword(this.state.email, this.state.password)
-      .then(createdUser => {
-        console.log(createdUser);
-      })
-      .catch(err => {
-        console.log(err);
-      });
+
+    if (this.isFormValid()) {
+      this.setState({ errors: [], loading: true });
+
+      firebase
+        .auth()
+        .createUserWithEmailAndPassword(this.state.email, this.state.password)
+        .then(createdUser => {
+          console.log(createdUser);
+          createdUser.user.updateProfile({
+            displayName: this.state.username,
+            photoURL: `http://gravatar.com/avatar/${md5(createdUser.user.email)}?d=identicon`
+          });
+          
+        })
+        .then(() => {
+          this.setState({ loading: false });
+        }) 
+        .catch(err => {
+          console.error(err);
+          this.setState({ errors: this.state.errors.concat(err), loading: false });
+        });
+    }
   }
 
   render() {
-    const {username, email, password, passwordConfirmation} = this.state;
+    const {username, email, password, passwordConfirmation, errors, loading} = this.state;
 
     return (
       <Grid textAlign="center" verticalAlign="middle" className="app">
@@ -46,18 +105,27 @@ class Register extends React.Component {
               <Form.Input fluid name="username" icon="user" iconPosition="left"
               placeholder="Username" value={username} onChange={this.handleChange} type="text" />
 
-              <Form.Input fluid name="email" icon="mail" iconPosition="left"
+              <Form.Input className={this.handleInputError(errors, 'email')}
+              fluid name="email" icon="mail" iconPosition="left"
               placeholder="Email Address" value={email} onChange={this.handleChange} type="email" />
 
-              <Form.Input fluid name="password" icon="lock" iconPosition="left"
+              <Form.Input className={this.handleInputError(errors, 'password')}
+              fluid name="password" icon="lock" iconPosition="left"
               placeholder="Password" value={password} onChange={this.handleChange} type="password" />
 
-              <Form.Input fluid name="passwordConfirmation" icon="repeat" iconPosition="left"
+              <Form.Input className={this.handleInputError(errors, 'password')}
+              fluid name="passwordConfirmation" icon="repeat" iconPosition="left"
               placeholder="Password Confirmation" value={passwordConfirmation} onChange={this.handleChange} type="password" />
 
-              <Button fluid color="orange" size="large">Submit</Button>
+              <Button disabled={loading} className={loading ? 'loading' : ''} fluid color="orange" size="large">Submit</Button>
             </Segment>
           </Form>
+          {errors.length > 0 && (
+            <Message error>
+              <h3>Error</h3>
+              {this.displayErrors(errors)}
+            </Message>
+          )}
           <Message>
             Already a user? <Link to="/login">Login</Link>
           </Message>
