@@ -16,7 +16,9 @@ class Register extends React.Component {
     password: "",
     passwordConfirmation: "",
     errors: [],
-    loading: false
+    loading: false,
+    // ref()：尋找資料庫路徑(預設：根目錄)
+    usersRef: firebase.database().ref('users')
   }
 
   isFormValid = () => {
@@ -74,20 +76,34 @@ class Register extends React.Component {
         .createUserWithEmailAndPassword(this.state.email, this.state.password)
         .then(createdUser => {
           console.log(createdUser);
-          createdUser.user.updateProfile({
-            displayName: this.state.username,
-            photoURL: `http://gravatar.com/avatar/${md5(createdUser.user.email)}?d=identicon`
-          });
-          
+          createdUser.user
+            .updateProfile({
+              displayName: this.state.username,
+              photoURL: `http://gravatar.com/avatar/${md5(createdUser.user.email)}?d=identicon`
+            })
+            .then(() => {
+              this.saveUser(createdUser).then(() => {
+                console.log('User saved!');
+              })
+            })
+            .catch(err => {
+              console.error(err);
+              this.setState({ errors: this.state.errors.concat(err), loading: false });
+            });
         })
-        .then(() => {
-          this.setState({ loading: false });
-        }) 
         .catch(err => {
           console.error(err);
           this.setState({ errors: this.state.errors.concat(err), loading: false });
         });
     }
+  }
+
+  saveUser = createdUser => {
+    // set()：新增資料(寫入方式：覆蓋)
+    return this.state.usersRef.child(createdUser.user.uid).set({
+      name: createdUser.user.displayName,
+      avatar: createdUser.user.photoURL
+    })
   }
 
   render() {
