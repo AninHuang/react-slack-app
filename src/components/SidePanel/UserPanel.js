@@ -4,6 +4,7 @@ import { Grid, Icon, Header, Dropdown, Image } from 'semantic-ui-react';
 import firebase from 'firebase';
 
 class UserPanel extends React.Component {
+
   state = {
     user: this.props.currentUser
   }
@@ -35,9 +36,10 @@ class UserPanel extends React.Component {
 
   render() {
     const { user } = this.state;
+    const { primaryColor } = this.props;
 
     return (
-      <Grid style={{ background: '#4c3c4c' }}>
+      <Grid style={{ background: primaryColor }}>
         <Grid.Column>
           <Grid.Row style={{ padding: '1.2em', margin: 0 }}>
             {/* App Header */}
@@ -45,13 +47,13 @@ class UserPanel extends React.Component {
               <Icon name="code" />
               <Header.Content>DevChat</Header.Content>
             </Header>
-            
+
             {/* User Dropdown */}
             <Header style={{ padding: '0.25em' }} as="h4" inverted>
               <Dropdown trigger={<span>
-              <Image src={user.photoURL} spaced="right" avatar />
-              {user.displayName}</span>} 
-              options={this.dropdownOptons()} />
+                <Image src={user.photoURL} spaced="right" avatar />
+                {user.displayName}</span>}
+                options={this.dropdownOptons()} />
             </Header>
           </Grid.Row>
         </Grid.Column>
