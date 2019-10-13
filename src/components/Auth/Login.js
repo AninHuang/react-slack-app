@@ -46,7 +46,7 @@ class Login extends React.Component {
   }
 
   isFormValid = ({email, password}) => {
-    email && password
+    return (email && password)
   }
 
   render() {
