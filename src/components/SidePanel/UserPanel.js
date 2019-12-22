@@ -12,6 +12,7 @@ class UserPanel extends React.Component {
     croppedImage: '',
     blob: '',
     uploadCroppedImage: '',
+    // Get a reference to the storage service, which is used to create references in your storage bucket
     storageRef: firebase.storage().ref(),
     userRef: firebase.auth().currentUser,
     usersRef: firebase.database().ref('users'),
@@ -44,7 +45,7 @@ class UserPanel extends React.Component {
     const { storageRef, userRef, blob, metadata } = this.state;
 
     storageRef
-      .child(`avatar/user-${userRef.uid}`)
+      .child(`avatar/user-${userRef.uid}`) // 移動路徑
       .put(blob, metadata)
       .then(snap => {
         snap.ref.getDownloadURL().then(downloadURL => {
