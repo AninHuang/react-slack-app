@@ -32,7 +32,12 @@ class MessageForm extends React.Component {
     this.setState({ [event.target.name]: event.target.value });
   };
 
-  handleKeyDown = () => {
+  handleKeyDown = event => {
+    // Press Ctrl + Enter
+    if (event.ctrlKey && event.KeyCode === 13) {
+      this.sendMessage();
+    }
+
     const { message, typingRef, channel, user } = this.state;
 
     if (message) {
